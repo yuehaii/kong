@@ -1,4 +1,9 @@
-local sha256 = require("kong.plugins.ali-function.sha256")
+local openssl_mac = require "resty.openssl.mac"
+local b64 = require "ngx.base64"
+
+local openssl_sign = {
+  hmac_sha256 = function(data, key) return openssl_mac.new(key, "HMAC", nil, "sha256"):final(data) end
+}
 
 local function build_canonicalized_headers(hdrs)
     local keys = {}
@@ -26,8 +31,8 @@ local function build_canonicalized_headers(hdrs)
 end
 
 local function sign_request(str, key)
-    local digest = sha256.hmac_sha256(key, str)
-    return sha256.b64(digest)
+    local digest = openssl_sign.hmac_sha256(str, key)
+    return b64.encode_base64url(digest)
 end
 
 
